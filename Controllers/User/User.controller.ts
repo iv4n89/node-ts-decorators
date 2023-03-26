@@ -35,8 +35,10 @@ export class UserController {
     }
 
     @Validation<User>({
-        email: {
-            isEmail: { value: true, message: 'Esto deberia ser un email valido' }
+        name: {
+            not: {
+                contains: { value: 'hola', message: 'NO debe contener hola' }
+            }
         }
     })
     @Post('/')
@@ -45,6 +47,13 @@ export class UserController {
         return res.Created().Json(_user).build();
     }
 
+    @Validation<User>({
+        name: {
+            not: {
+                contains: 'hoa'
+            }
+        }
+    })
     @Put('/:id')
     public async update(@Params('id') id: number, @Body() user: Partial<User>, @Res() res: ResponseBuilder) {
         const _user = await this.service.update(id, user);

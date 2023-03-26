@@ -70,6 +70,7 @@ type Validations = {
     isCreditCard?: | { value: boolean, message?: string } | boolean;
     isAlpha?: | { value: boolean, message?: string } | boolean;
     isAlphanumeric?: | { value: boolean, message?: string } | boolean;
+    not?: Omit<Validations, 'not'>
 }
 
 type ValidationType<T> = Partial<Omit<T, keyof BaseModel>>;
@@ -88,117 +89,164 @@ export function Validation<T>(validationKeys: ValidationsKeys<T>): MethodDecorat
         
         const newValidations: any[] = [];
 
+        const getCheck = (not: boolean = false, field: string, message: string) => not ? check(field, message).not() : check(field, message);
+
         Object.keys(validationKeys).forEach((field) => {
             Object.keys(validationKeys[field]).forEach((key) => {
-                switch (key) {
-                    case ValidationKeys.IsNotEmpty:
-                        newValidations.push(check(field, typeof validationKeys[field][key] === 'boolean' ? `${ field } must not be empty` : (validationKeys[field][key])['message']).custom((value, { req: { body, files } }) => body != undefined && !!body[field] && Object.keys(body).includes(field) || files != undefined && !!files[field] && Object.keys(files).includes(field))) || false;
-                        break;
-                    case ValidationKeys.IsEmpty:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' ? `${ field } must be empty` : (validationKeys[field][key])['message']).custom((value, { req: { body, files } }) => Object.keys(body).includes(field) && (body[field] == undefined || body[field] == null) || Object.keys(files).includes(field) && (files[field] == undefined || files[field] == null) || !Object(body).includes(field) || !Object.keys(files).includes(field)));
-                        break;
-                    case ValidationKeys.IsOptional:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' ? `${ field } must not be empty` : (validationKeys[field][key])['message']).custom((value, { req: { body, files } }) => Object.keys(body).includes(field) && (body[field] == undefined || body[field] == null) || Object.keys(files).includes(field) && (files[field] == undefined || files[field] == null) || !Object(body).includes(field) || !Object.keys(files).includes(field)));
-                        break;
-                    case ValidationKeys.Contains:
-                        newValidations.push(check(field, typeof validationKeys[field][key] === 'string' || !(validationKeys[field][key])['message'] ? `${ field } must contain ${ !!(validationKeys[field][key])['value'] && (validationKeys[field][key])['value'] || validationKeys[field][key]}` : (validationKeys[field][key])['message']).contains(!!(validationKeys[field][key])['value'] && (validationKeys[field][key])['value'] || validationKeys[field][key]));
-                        break;
-                    case ValidationKeys.Max:
-                        newValidations.push(check(field, typeof validationKeys[field][key] === 'number' || !(validationKeys[field][key])['message'] ? `${ field } must be less or equal to ${ !!(validationKeys[field][key])['value'] && (validationKeys[field][key])['value'] || validationKeys[field][key] }` : (validationKeys[field][key])['message']).custom((value, { req }) => req.body[field] ?? 0 <= value));
-                        break;
-                    case ValidationKeys.Min:
-                        newValidations.push(check(field, typeof validationKeys[field][key] === 'number' || !(validationKeys[field][key])['message'] ? `${ field } must be more or equal to ${ !!(validationKeys[field][key])['value'] && (validationKeys[field][key])['value'] || validationKeys[field][key] }` : (validationKeys[field][key])['message']).custom((value, { req }) => req.body[field] ?? 0 >= value));
-                        break;
-                    case ValidationKeys.MaxLength:
-                        newValidations.push(check(field, typeof validationKeys[field][key] === 'string' || !(validationKeys[field][key])['message'] ? `${ field } must has ${ !!(validationKeys[field][key])['value'] && (validationKeys[field][key])['value'] || validationKeys[field][key] } or less characters` : (validationKeys[field][key])['message']).isLength({ max: !!(validationKeys[field][key])['value'] && (validationKeys[field][key])['value'] || validationKeys[field][key] }));
-                        break;
-                    case ValidationKeys.MinLength:
-                        newValidations.push(check(field, typeof validationKeys[field][key] === 'string' || !(validationKeys[field][key])['message'] ? `${ field } must has ${ !!(validationKeys[field][key])['value'] && (validationKeys[field][key])['value'] || validationKeys[field][key] } or more characters`: (validationKeys[field][key])['message']).isLength({ min: !!(validationKeys[field][key])['value'] && (validationKeys[field][key])['value'] || validationKeys[field][key] }));
-                        break;
-                    case ValidationKeys.Equals:
-                        newValidations.push(check(field, typeof validationKeys[field][key] === 'string' || !(validationKeys[field][key])['message'] ? `${ field } must be equal to ${ !!(validationKeys[field][key])['value'] && (validationKeys[field][key])['value'] || validationKeys[field][key] }` : (validationKeys[field][key])['message']).equals(!!(validationKeys[field][key])['value'] && (validationKeys[field][key])['value'] || validationKeys[field][key]));
-                        break;
-                    case ValidationKeys.IsBoolean:
-                        newValidations.push(check(field, typeof validationKeys[field][key] === 'boolean' || !(validationKeys[field][key])['message'] ? `${ field } must be boolean` : (validationKeys[field][key])['message']).toBoolean().isBoolean())
-                        break;
-                    case ValidationKeys.IsNumeric:
-                        newValidations.push(check(field, typeof validationKeys[field][key] === 'number' || !(validationKeys[field][key])['message'] ? `${ field } must be numeric` : (validationKeys[field][key])['message']).isNumeric());
-                        break;
-                    case ValidationKeys.IsInt:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } must be an integer` : (validationKeys[field][key])['message']).isInt());
-                        break;
-                    case ValidationKeys.IsFloat:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } must be a float` : (validationKeys[field][key])['message']).isFloat());
-                        break;
-                    case ValidationKeys.IsString:
-                        newValidations.push(check(field, typeof validationKeys[field][key] === 'string' || !(validationKeys[field][key])['message'] ? `${ field } must be string`: (validationKeys[field][key])['message']).isString());
-                        break;
-                    case ValidationKeys.In:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } value must be in ${ !!(validationKeys[field][key])['value'] && (validationKeys[field][key])['value'] || validationKeys[field][key] }` : (validationKeys[field][key])['message']).isIn(!!(validationKeys[field][key])['value'] && (validationKeys[field][key])['value'] || validationKeys[field][key]));
-                        break;
-                    case ValidationKeys.IsEmail:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } must be an email` : (validationKeys[field][key])['message']).isEmail());
-                        break;
-                    case ValidationKeys.IsDate:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } must be a date` : (validationKeys[field][key])['message']).isDate({ format: 'YYYY-MM-DD' }));
-                        break;
-                    case ValidationKeys.IsBefore:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } must be before ${ !!(validationKeys[field][key])['value'] && (validationKeys[field][key])['value'] || validationKeys[field][key] }` : (validationKeys[field][key])['message']).isBefore(!!(validationKeys[field][key])['value'] && (validationKeys[field][key])['value'] || validationKeys[field][key]));
-                        break;
-                    case ValidationKeys.IsAfter:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } must be after ${ !!(validationKeys[field][key])['value'] && (validationKeys[field][key])['value'] || validationKeys[field][key] }` : (validationKeys[field][key])['message']).isAfter(!!(validationKeys[field][key])['value'] && (validationKeys[field][key])['value'] || validationKeys[field][key]));
-                        break;
-                    case ValidationKeys.Matches:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' && 'value' in <any>validationKeys[field][key] || !(validationKeys[field][key])['message'] ? `${ field } must match the provided RegExp` : (validationKeys[field][key])['message']).matches(!!(validationKeys[field][key])['value'] && (validationKeys[field][key])['value'] || validationKeys[field][key]));
-                        break;
-                    case ValidationKeys.IsMobilePhone:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } must be a valid mobile phone number` : (validationKeys[field][key])['message']).isMobilePhone(!!(validationKeys[field][key])['locale'] && (validationKeys[field][key])['locale'] || 'es-ES'));
-                        break;
-                    case ValidationKeys.IsStrongPassword:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } must be at least ${ (validationKeys[field][key])['minLength'] ?? 8 } characters length, contain at least ${ (validationKeys[field][key])['minLowerCase'] ?? 1 } lower case characters, contain at least ${ (validationKeys[field][key])['minUpperCase'] ?? 1 } upper case characters, contain at least ${ (validationKeys[field][key])['minNumbers'] ?? 1 } numbers, contain at least ${ (validationKeys[field][key])['minSymbols'] ?? 1 } symbols`
-                         : (validationKeys[field][key])['message']).isStrongPassword({
-                            minLength: (validationKeys[field][key])['minLength'] ?? 8,
-                            minLowercase: (validationKeys[field][key])['minLowerCase'] ?? 1,
-                            minUppercase: (validationKeys[field][key])['minUpperCase'] ?? 1,
-                            minNumbers: (validationKeys[field][key])['minNumbers'] ?? 1,
-                            minSymbols: (validationKeys[field][key])['minSymbols'] ?? 1,
-                        }));
-                        break;
-                    case ValidationKeys.IsFile:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } must be an uploaded file` : (validationKeys[field][key])['message']).custom(((value, { req: { files } }) => Object.keys(files).includes(field))));
-                        break;
-                    case ValidationKeys.IsImage:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } must be an uploaded image` : (validationKeys[field][key])['message']).custom((value, { req: { files } }) => !!files[field] && files[field].mimetype.includes('image')));
-                        break;
-                    case ValidationKeys.IsPDF:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } must be an uploaded pdf` : (validationKeys[field][key])['message']).custom((value, { req: { files } }) => !!files[field] && files[field].mimetype.includes('pdf')));
-                        break;
-                    case ValidationKeys.IsJson:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } must be json` : (validationKeys[field][key])['message']).isJSON());
-                        break;
-                    case ValidationKeys.IsIBAN:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } must be a valid IBAN` : (validationKeys[field][key])['message']).isIBAN());
-                        break;
-                    case ValidationKeys.IsBIC:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } must be a valid BIC or SWIFT` : (validationKeys[field][key])['message']).isBIC());
-                        break;
-                    case ValidationKeys.IsCreditCard:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } must be a valid credit card number` : (validationKeys[field][key])['message']).isCreditCard());
-                        break;
-                    case ValidationKeys.IsAlpha:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } must be alpha type` : (validationKeys[field][key])['message']).isAlpha((validationKeys[field][key])['locale'] ?? 'es-ES'));
-                        break;
-                    case ValidationKeys.IsAlphanumeric:
-                        newValidations.push(check(field, typeof validationKeys[field][key] !== 'object' || !(validationKeys[field][key])['message'] ? `${ field } must be alphanumeric type` : (validationKeys[field][key])['message']).isAlphanumeric((validationKeys[field][key])['locale'] ?? 'es-ES'));
-                        break;
-                    default:
-                        break;
-                }
+
+                getValidations(newValidations, validationKeys, field, key, validationKeys[field][key], getCheck);
+                
             })
         })
 
         validations[propertyKey] = [...(validations[propertyKey] ?? []), ...newValidations];
 
         Reflect.defineMetadata(MetadataKeys.VALIDATE, validations, controller);
+    }
+}
+
+function getValidations(validations: any[], validationKeys: any, field: any, key: any, element: any, getCheck: Function, not: boolean = false) {
+    let message: string;
+    switch (key) {
+        case ValidationKeys.IsNotEmpty:
+            message = typeof element === 'boolean' ? `${ field } must ${ not ? '' : 'not' } be empty` : (element)['message'];
+            validations.push(getCheck(not, field, message).custom((value, { req: { body, files } }) => body != undefined && !!body[field] && Object.keys(body).includes(field) || files != undefined && !!files[field] && Object.keys(files).includes(field))) || false;
+            break;
+        case ValidationKeys.IsEmpty:
+            message = typeof element !== 'object' ? `${ field } must ${ not ? 'not' : '' } be empty` : (element)['message'];
+            validations.push(getCheck(not, field, message).custom((value, { req: { body, files } }) => Object.keys(body).includes(field) && (body[field] == undefined || body[field] == null) || Object.keys(files).includes(field) && (files[field] == undefined || files[field] == null) || !Object(body).includes(field) || !Object.keys(files).includes(field)));
+            break;
+        case ValidationKeys.IsOptional:
+            message = typeof element !== 'object' ? `${ field } must ${ not ? '' : 'not' } be empty` : (element)['message'];
+            validations.push(getCheck(not, field, message).custom((value, { req: { body, files } }) => Object.keys(body).includes(field) && (body[field] == undefined || body[field] == null) || Object.keys(files).includes(field) && (files[field] == undefined || files[field] == null) || !Object(body).includes(field) || !Object.keys(files).includes(field)));
+            break;
+        case ValidationKeys.Contains:
+            message = typeof element === 'string' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } contain ${ !!(element)['value'] && (element)['value'] || element}` : (element)['message'];
+            validations.push(getCheck(not, field, message).contains(!!(element)['value'] && (element)['value'] || element));
+            break;
+        case ValidationKeys.Max:
+            message = typeof element === 'number' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be less or equal to ${ !!(element)['value'] && (element)['value'] || element }` : (element)['message'];
+            validations.push(getCheck(not, field, message).custom((value, { req }) => req.body[field] ?? 0 <= value));
+            break;
+        case ValidationKeys.Min:
+            message = typeof element === 'number' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be more or equal to ${ !!(element)['value'] && (element)['value'] || element }` : (element)['message'];
+            validations.push(getCheck(not, field, message).custom((value, { req }) => req.body[field] ?? 0 >= value));
+            break;
+        case ValidationKeys.MaxLength:
+            message = typeof element === 'string' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } has ${ !!(element)['value'] && (element)['value'] || element } or less characters` : (element)['message'];
+            validations.push(getCheck(not, field, message).isLength({ max: !!(element)['value'] && (element)['value'] || element }));
+            break;
+        case ValidationKeys.MinLength:
+            message = typeof element === 'string' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } has ${ !!(element)['value'] && (element)['value'] || element } or more characters`: (element)['message'];
+            validations.push(getCheck(not, field, message).isLength({ min: !!(element)['value'] && (element)['value'] || element }));
+            break;
+        case ValidationKeys.Equals:
+            message = typeof element === 'string' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be equal to ${ !!(element)['value'] && (element)['value'] || element }` : (element)['message'];
+            validations.push(getCheck(not, field, message).equals(!!(element)['value'] && (element)['value'] || element));
+            break;
+        case ValidationKeys.IsBoolean:
+            message = typeof element === 'boolean' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be boolean` : (element)['message'];
+            validations.push(getCheck(not, field, message).toBoolean().isBoolean())
+            break;
+        case ValidationKeys.IsNumeric:
+            message = typeof element === 'number' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be numeric` : (element)['message'];
+            validations.push(getCheck(not, field, message).isNumeric());
+            break;
+        case ValidationKeys.IsInt:
+            message = typeof element !== 'object' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be an integer` : (element)['message'];
+            validations.push(getCheck(not, field, message).isInt());
+            break;
+        case ValidationKeys.IsFloat:
+            message = typeof element !== 'object' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be a float` : (element)['message'];
+            validations.push(getCheck(not, field, message).isFloat());
+            break;
+        case ValidationKeys.IsString:
+            message = typeof element === 'string' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be string`: (element)['message'];
+            validations.push(getCheck(not, field, message).isString());
+            break;
+        case ValidationKeys.In:
+            message = typeof element !== 'object' || !(element)['message'] ? `${ field } value must ${ not ? 'not' : '' } be in ${ !!(element)['value'] && (element)['value'] || element }` : (element)['message'];
+            validations.push(getCheck(not, field, message).isIn(!!(element)['value'] && (element)['value'] || element));
+            break;
+        case ValidationKeys.IsEmail:
+            message = typeof element !== 'object' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be an email` : (element)['message'];
+            validations.push(getCheck(not, field, message).isEmail());
+            break;
+        case ValidationKeys.IsDate:
+            message = typeof element !== 'object' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be a date` : (element)['message'];
+            validations.push(getCheck(not, field, message).isDate({ format: 'YYYY-MM-DD' }));
+            break;
+        case ValidationKeys.IsBefore:
+            message = typeof element !== 'object' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be before ${ !!(element)['value'] && (element)['value'] || element }` : (element)['message'];
+            validations.push(getCheck(not, field, message).isBefore(!!(element)['value'] && (element)['value'] || element));
+            break;
+        case ValidationKeys.IsAfter:
+            message = typeof element !== 'object' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be after ${ !!(element)['value'] && (element)['value'] || element }` : (element)['message'];
+            validations.push(getCheck(not, field, message).isAfter(!!(element)['value'] && (element)['value'] || element));
+            break;
+        case ValidationKeys.Matches:
+            message = typeof element !== 'object' && 'value' in <any>element || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } match the provided RegExp` : (element)['message'];
+            validations.push(getCheck(not, field, message).matches(!!(element)['value'] && (element)['value'] || element));
+            break;
+        case ValidationKeys.IsMobilePhone:
+            message = typeof element !== 'object' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be a valid mobile phone number` : (element)['message'];
+            validations.push(getCheck(not, field, message).isMobilePhone(!!(element)['locale'] && (element)['locale'] || 'es-ES'));
+            break;
+        case ValidationKeys.IsStrongPassword:
+            message = typeof element !== 'object' || !(element)['message'] 
+                ? `${ field } must ${ not ? 'not' : '' } be at least ${ (element)['minLength'] ?? 8 } characters length, contain at least ${ (element)['minLowerCase'] ?? 1 } lower case characters, contain at least ${ (element)['minUpperCase'] ?? 1 } upper case characters, contain at least ${ (element)['minNumbers'] ?? 1 } numbers, contain at least ${ (element)['minSymbols'] ?? 1 } symbols`
+                : (element)['message'];
+            validations.push(getCheck(not, field, message).isStrongPassword({
+                minLength: (element)['minLength'] ?? 8,
+                minLowercase: (element)['minLowerCase'] ?? 1,
+                minUppercase: (element)['minUpperCase'] ?? 1,
+                minNumbers: (element)['minNumbers'] ?? 1,
+                minSymbols: (element)['minSymbols'] ?? 1,
+            }));
+            break;
+        case ValidationKeys.IsFile:
+            message = typeof element !== 'object' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be an uploaded file` : (element)['message'];
+            validations.push(getCheck(not, field, message).custom(((value, { req: { files } }) => Object.keys(files).includes(field))));
+            break;
+        case ValidationKeys.IsImage:
+            message = typeof element !== 'object' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be an uploaded image` : (element)['message'];
+            validations.push(getCheck(not, field, message).custom((value, { req: { files } }) => !!files[field] && files[field].mimetype.includes('image')));
+            break;
+        case ValidationKeys.IsPDF:
+            message = typeof element !== 'object' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be an uploaded pdf` : (element)['message'];
+            validations.push(getCheck(not, field, message).custom((value, { req: { files } }) => !!files[field] && files[field].mimetype.includes('pdf')));
+            break;
+        case ValidationKeys.IsJson:
+            message = typeof element !== 'object' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be json` : (element)['message'];
+            validations.push(getCheck(not, field, message).isJSON());
+            break;
+        case ValidationKeys.IsIBAN:
+            message = typeof element !== 'object' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be a valid IBAN` : (element)['message'];
+            validations.push(getCheck(not, field, message).isIBAN());
+            break;
+        case ValidationKeys.IsBIC:
+            message = typeof element !== 'object' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be a valid BIC or SWIFT` : (element)['message'];
+            validations.push(getCheck(not, field, message).isBIC());
+            break;
+        case ValidationKeys.IsCreditCard:
+            message = typeof element !== 'object' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be a valid credit card number` : (element)['message'];
+            validations.push(getCheck(not, field, message).isCreditCard());
+            break;
+        case ValidationKeys.IsAlpha:
+            message = typeof element !== 'object' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be alpha type` : (element)['message'];
+            validations.push(getCheck(not, field, message).isAlpha((element)['locale'] ?? 'es-ES'));
+            break;
+        case ValidationKeys.IsAlphanumeric:
+            message = typeof element !== 'object' || !(element)['message'] ? `${ field } must ${ not ? 'not' : '' } be alphanumeric type` : (element)['message'];
+            validations.push(getCheck(not, field, message).isAlphanumeric((element)['locale'] ?? 'es-ES'));
+            break;
+        case ValidationKeys.Not:
+            if (typeof element === 'object') {
+                Object.keys(element).forEach(notKey => {
+                    getValidations(validations, validationKeys, field, notKey, validationKeys[field][key][notKey], getCheck, true);
+                })
+            }
+        default:
+            break;
     }
 }
