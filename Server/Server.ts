@@ -12,6 +12,7 @@ import { CorsBypass } from "../Middlewares/CorsBypass.middleware";
 import { errorHandling } from "../Middlewares/errorHandling.middleware";
 import { JwtVerify } from "../Middlewares/JwtVerify.middleware";
 import parseResponseMiddleware from "../Middlewares/parseResponse.middleware";
+import { ValidateFields } from "../Middlewares/ValidateFields.middleware";
 
 export class Server {
 
@@ -94,11 +95,21 @@ export class Server {
                     middlewares.push(JwtVerify);
                 }
 
-                exRouter[method] (path, [...middlewares], asyncError(routerHandler.bind(controllerInstance)));
+                const validations = Reflect.hasMetadata(MetadataKeys.VALIDATE, controllerClass)
+                                    ? Reflect.getMetadata(MetadataKeys.VALIDATE, controllerClass)
+                                    : null;
+
+                if (validations) {
+                    Object.entries(validations).forEach(([key, value]) => {
+                        if (key === handlerName) middlewares = [...middlewares, ...(<any[]>value)];
+                    });
+                }
+
+                exRouter[method] (path, [...middlewares, ValidateFields], asyncError(routerHandler.bind(controllerInstance)));
 
                 info.push({
                     api: `${ method.toLocaleUpperCase() } ${ basePath + path }`,
-                    handler: `${ controllerClass.name }.${ String(handlerName) }`,
+                    handler: `${ controllerClass.name }.${ String(handlerName) }`, 
                 });
 
                 this.app.use(basePath, exRouter);

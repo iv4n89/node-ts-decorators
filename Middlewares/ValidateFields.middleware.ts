@@ -15,7 +15,8 @@ export const ValidateFields = (req: Request, res: Response, next: NextFunction) 
                     code: StatusCodes.BAD_REQUEST,
                     errors: errors['errors'],
                     result: null
-                });
+                })
+                .build();
     }
 
     return next();

@@ -2,6 +2,7 @@ import { UserService } from "../../Services/User/User.service";
 import { Body, Controller, Delete, Get, Jwt, Params, Post, Put, Res } from "../../Decorators";
 import { User } from "../../Models/User/User";
 import { ResponseBuilder } from "../../Helpers/ResponseBuilder";
+import { Validation } from "../../Decorators/validate.decorator";
 
 
 @Controller('/user')
@@ -33,6 +34,11 @@ export class UserController {
         return res.Ok().Json(user).build();
     }
 
+    @Validation<User>({
+        email: {
+            isEmail: { value: true, message: 'Esto deberia ser un email valido' }
+        }
+    })
     @Post('/')
     public async create(@Body() user: User, @Res() res: ResponseBuilder) {
         const _user = await this.service.create(user);
