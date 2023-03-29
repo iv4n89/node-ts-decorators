@@ -11,9 +11,13 @@ export interface IRouter {
 
 
 const methodDecoratorFacotory = (method: Methods) => {
-    return (path: string): MethodDecorator => {
+    return (path: string = ''): MethodDecorator => {
         return (target, propertyKey) => {
             const controllerClass = target.constructor;
+
+            if (path === '' || path.charAt(0) !== '/') {
+                path = `/${ path }`;
+            }
 
             const routers: IRouter[] = Reflect.hasMetadata(MetadataKeys.ROUTERS, controllerClass)
                                         ? Reflect.getMetadata(MetadataKeys.ROUTERS, controllerClass)

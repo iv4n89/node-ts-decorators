@@ -1,13 +1,13 @@
-import { StatusCodes } from "http-status-codes";
+
 import { Body, Controller, Post, Res } from "../../Decorators";
 import { AuthService } from "../../Services/Auth/AuthService.service";
 import { UserService } from "../../Services";
 import { ResponseBuilder } from "../../Helpers/ResponseBuilder";
 
-@Controller('/auth')
+@Controller('auth')
 export class AuthController {
 
-    @Post('/login')
+    @Post('login')
     public async login(@Body('email') email: string, @Body('password') password: string, @Res() res: ResponseBuilder) {
         const { token, user } = await AuthService.instance.verifyPassword(email, password);
         return res.Ok().Json({
@@ -17,7 +17,7 @@ export class AuthController {
         .build();
     }
 
-    @Post('/register')
+    @Post('register')
     public async register(@Body() body: any, @Res() res: ResponseBuilder) {
         const user = await UserService.instance.create(body);
         if (!user) throw new Error('User have not been created');

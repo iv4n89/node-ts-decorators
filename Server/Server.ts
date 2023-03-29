@@ -59,6 +59,9 @@ export class Server {
             const controllerInstance: { [handlerName: string]: Handler } = new controllerClass() as any;
 
             let basePath: string = Reflect.getMetadata(MetadataKeys.BASE_PATH, controllerClass);
+            if (basePath.charAt(0) !== '/') {
+                basePath = `/${ basePath }`;
+            }
             const routers: IRouter[] = Reflect.getMetadata(MetadataKeys.ROUTERS, controllerClass);
 
             const api: string = (Reflect.hasMetadata(MetadataKeys.API, controllerClass) && Reflect.getMetadata(MetadataKeys.API, controllerClass)) || null;

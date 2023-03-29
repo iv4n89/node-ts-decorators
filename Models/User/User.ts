@@ -1,5 +1,6 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity } from "typeorm";
+import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany } from "typeorm";
 import { AuthService } from "../../Services/Auth/AuthService.service";
+import { ActivityResult } from "../Activity/ActivityResult";
 import { BaseModel } from "../BaseMode";
 
 
@@ -17,6 +18,9 @@ export class User extends BaseModel {
 
     @Column('varchar', { select: false })
     password!: string;
+
+    @OneToMany(() => ActivityResult, activityResult => activityResult.user)
+    activityResults: ActivityResult[];
 
     @BeforeInsert()
     @BeforeUpdate()
