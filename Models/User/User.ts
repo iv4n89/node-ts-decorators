@@ -13,11 +13,20 @@ export class User extends BaseModel {
     @Column('varchar')
     lastName!: string;
 
+    @Column('varchar')
+    username: string;
+
     @Column('varchar', { unique: true })
     email!: string;
 
     @Column('varchar', { select: false })
     password!: string;
+
+    @Column('varchar', { nullable: true })
+    avatar: string;
+
+    @Column('varchar', { nullable: true })
+    remember_token: string;
 
     @OneToMany(() => ActivityResult, activityResult => activityResult.user)
     activityResults: ActivityResult[];

@@ -7,6 +7,7 @@ import { ActivityTypeController } from "./Activity/ActivityType.controller";
 import { AuthController } from "./Auth/Auth.controller";
 import { CountryController } from "./Country/Country.controller";
 import { CountryZoneController } from "./Country/CountryZone.controller";
+import { SubjectController } from "./Subject/Subject.controller";
 import { UserController } from "./User/User.controller";
 
 
@@ -20,5 +21,6 @@ export const controllers = [
     ActivityPartController,
     ActivitySectionController,
     ActivitySectionTypeController,
-    PossibleResultController
+    PossibleResultController,
+    SubjectController
 ];

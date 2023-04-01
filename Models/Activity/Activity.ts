@@ -17,10 +17,10 @@ export class Activity extends BaseModel {
     @Column('varchar', { nullable: true })
     description: string;
 
-    @ManyToOne(() => ActivityType, type => type.activities)
+    @ManyToOne(() => ActivityType, type => type.activities, { eager: true })
     type: ActivityType;
 
-    @OneToMany(() => ActivityPart, part => part.activity)
+    @OneToMany(() => ActivityPart, part => part.activity, { eager: true })
     parts: ActivityPart[];
 
     @OneToMany(() => ActivityResult, activityResult => activityResult.activity)
