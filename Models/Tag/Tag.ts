@@ -12,6 +12,9 @@ export class Tag extends BaseModel {
     @Column('varchar')
     name: string;
 
+    @Column('varchar')
+    color: string;
+
     @ManyToMany(() => Activity, activity => activity.tags, { createForeignKeyConstraints: true, nullable: true })
     @JoinTable()
     activities: Activity[];
