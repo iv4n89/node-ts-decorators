@@ -8,6 +8,8 @@ import { AuthController } from "./Auth/Auth.controller";
 import { CountryController } from "./Country/Country.controller";
 import { CountryZoneController } from "./Country/CountryZone.controller";
 import { SubjectController } from "./Subject/Subject.controller";
+import { TagController } from "./Tag/Tag.controller";
+import { TopicController } from "./Topic/Topic.controller";
 import { UserController } from "./User/User.controller";
 
 
@@ -22,5 +24,7 @@ export const controllers = [
     ActivitySectionController,
     ActivitySectionTypeController,
     PossibleResultController,
-    SubjectController
+    SubjectController,
+    TopicController,
+    TagController,
 ];

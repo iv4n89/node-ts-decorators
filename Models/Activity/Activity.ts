@@ -1,5 +1,8 @@
-import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
+import { Column, Entity, ManyToMany, ManyToOne, OneToMany } from "typeorm";
+import { Server } from "../../Server/Server";
 import { BaseModel } from "../BaseMode";
+import { Tag } from "../Tag/Tag";
+import { Topic } from "../Topic/Topic";
 import { ActivityPart } from "./ActivityPart/ActivityPart";
 import { ActivityResult } from "./ActivityResult";
 import { ActivityType } from "./ActivityType";
@@ -25,4 +28,21 @@ export class Activity extends BaseModel {
 
     @OneToMany(() => ActivityResult, activityResult => activityResult.activity)
     activityResults: ActivityResult[];
+
+    @ManyToOne(() => Topic, topic => topic.activities)
+    topic: Topic;
+
+    @ManyToMany(() => Tag, tag => tag.activities, { nullable: true })
+    tags: Tag[];
+
+    public async setTag(id: number | Tag) {
+        const tag = await Tag.createOrGetTag(id);
+        this.tags = [ ...new Set([ ...this.tags, tag ]) ];
+        await Server.Db.getRepository(Activity).save(this);
+    }
+
+    public async deleteTag(id: number) {
+        this.tags = this.tags.filter(tag => tag.id !== id);
+        await Server.Db.getRepository(Activity).save(this);
+    }
 }
