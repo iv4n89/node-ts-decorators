@@ -6,7 +6,7 @@ import { Subject } from "../Subject/Subject";
 import { Topic } from "../Topic/Topic";
 
 
-@Entity({ name: 'topics' })
+@Entity({ name: 'tags' })
 export class Tag extends BaseModel {
 
     @Column('varchar')
